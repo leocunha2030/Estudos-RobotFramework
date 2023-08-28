@@ -16,9 +16,10 @@ Criar um usuário novo
     Log    Minha palavra aleatoria ${PALAVRA_ALEATORIA}@email.com
 
 Cadastrar um usuário criado na ServeRest
+    [Arguments]    ${email}  ${status_code_desejado}
     ${body}    Create Dictionary    
     ...    nome=Fulano da Silva
-    ...    email=${EMAIL_TESTE}
+    ...    email=${email}
     ...    password=12345  
     ...    administrador=true
     Log    ${body}
@@ -27,6 +28,7 @@ Cadastrar um usuário criado na ServeRest
     ...    alias=ServeRest
     ...    url=/usuarios
     ...    json=${body}
+    ...    expected_status=${status_code_desejado}
     
     Log    ${resposta.json()}
     Set Test Variable    ${RESPOSTA}    ${resposta.json()}
@@ -36,4 +38,8 @@ Conferir se o usuário foi cadastrado com sucesso
     Dictionary Should Contain Item    ${RESPOSTA}    message  Cadastro realizado com sucesso
     Dictionary Should Contain Key    ${RESPOSTA}     _id
 
-    
+Vou repetir o cadastro do usuário
+    Cadastrar um usuário criado na ServeRest  email=${EMAIL_TESTE}  status_code_desejado=400  
+
+Verificar se a API não permitiu o cadastro repetido
+    Dictionary Should Contain Item    ${RESPOSTA}    message    Este email já está sendo usado
