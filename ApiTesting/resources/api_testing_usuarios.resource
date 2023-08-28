@@ -23,7 +23,9 @@ Cadastrar um usuário criado na ServeRest
     ...    password=12345  
     ...    administrador=true
     Log    ${body}
+
     Criar Sessão na ServeRest
+
     ${resposta}    POST On Session    
     ...    alias=ServeRest
     ...    url=/usuarios
@@ -31,7 +33,11 @@ Cadastrar um usuário criado na ServeRest
     ...    expected_status=${status_code_desejado}
     
     Log    ${resposta.json()}
-    Set Test Variable    ${RESPOSTA}    ${resposta.json()}
+    IF    ${resposta.status_code} == 201
+          Set Test Variable    ${ID_USUARIO}    ${resposta.json()["_id"]}
+    END
+
+    Set Test Variable    ${RESPOSTA}      ${resposta.json()}
 
 Conferir se o usuário foi cadastrado com sucesso
     Log    ${RESPOSTA}
@@ -43,3 +49,40 @@ Vou repetir o cadastro do usuário
 
 Verificar se a API não permitiu o cadastro repetido
     Dictionary Should Contain Item    ${RESPOSTA}    message    Este email já está sendo usado
+
+Consultar os dados do novo usuário
+    ${resposta_consulta}    GET On Session  alias=ServeRest  url=/usuarios/${ID_USUARIO}  expected_status=200
+    Set Test Variable    ${RESP_CONSULTA}  ${resposta_consulta.json()}
+    Log    ${resposta_consulta.status_code}
+    Log    ${resposta_consulta.reason}
+    Log    ${resposta_consulta.headers}
+    Log    ${resposta_consulta.elapsed}
+    Log    ${resposta_consulta.text}
+
+Conferir os dados retornados
+    Log    ${RESP_CONSULTA}
+    Dictionary Should Contain Item    ${RESP_CONSULTA}    nome             Fulano da Silva
+    Dictionary Should Contain Item    ${RESP_CONSULTA}    email            ${EMAIL_TESTE}
+    Dictionary Should Contain Item    ${RESP_CONSULTA}    password         12345
+    Dictionary Should Contain Item    ${RESP_CONSULTA}    administrador    true
+    Dictionary Should Contain Item    ${RESP_CONSULTA}    _id              ${ID_USUARIO}
+
+Realizar Login
+    
+    ${body}    Create Dictionary
+    ...        email=${EMAIL_TESTE}
+    ...        password=12345
+    
+    Criar Sessão na ServeRest
+    
+    ${resposta}    POST On Session    
+    ...    alias=ServeRest
+    ...    url=/login
+    ...    json=${body}
+    ...    expected_status=200
+    
+    Set Test Variable    ${resposta}    ${resposta.json()}
+
+Verificar se o login foi realizado com sucesso
+    Dictionary Should Contain Item    ${resposta}    message    Login realizado com sucesso
+    Dictionary Should Contain Key     ${resposta}     authorization
